@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -50,8 +49,9 @@ fun HomeScreen(homeViewModel : HomeViewModel, navigateToAdd: () -> Unit){
 
     val error:String by homeViewModel.error.observeAsState("No hay reseñas ¡Agrega algunas!")
     val reviews: List<Review> by homeViewModel.reviews.observeAsState(emptyList())
+    
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(true) {
         homeViewModel.onEnter()
     }
 

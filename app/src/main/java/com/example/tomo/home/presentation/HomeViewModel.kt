@@ -1,5 +1,6 @@
 package com.example.tomo.home.presentation
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,6 +13,10 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     private val tokenManager: TokenManager
 ): ViewModel() {
+
+    init {
+        Log.d("HOME_VW", "init: Inicialización de la clase ")
+    }
 
     private val repository = HomeRepository(tokenManager)
 

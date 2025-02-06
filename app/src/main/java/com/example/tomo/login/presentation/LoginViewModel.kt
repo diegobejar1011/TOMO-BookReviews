@@ -1,5 +1,6 @@
 package com.example.tomo.login.presentation
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,6 +13,10 @@ import kotlinx.coroutines.launch
 class LoginViewModel(
     private val tokenManager: TokenManager
 ): ViewModel() {
+
+    init {
+        Log.d("LOGIN_VW", "init: Inicialización de la clase ")
+    }
 
     private val repository = LoginRepository()
 
@@ -35,7 +40,7 @@ class LoginViewModel(
         _password.value = password
     }
 
-    suspend fun onClick(validateRequest: UserValidateRequest) {
+    fun onClick(validateRequest: UserValidateRequest) {
         viewModelScope.launch {
             val result = repository.validateUser(validateRequest)
             result.onSuccess { data ->

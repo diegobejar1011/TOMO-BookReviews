@@ -148,10 +148,7 @@ fun LoginScreen(loginModelView: LoginViewModel, navigateToHome: () -> Unit, navi
         Button(
             onClick = {
                 val userValidateRequest = UserValidateRequest(email, password)
-                loginModelView.viewModelScope.launch {
-                    loginModelView.onClick(userValidateRequest)
-                }
-
+                loginModelView.onClick(userValidateRequest)
             },
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 10.dp, vertical = 20.dp)

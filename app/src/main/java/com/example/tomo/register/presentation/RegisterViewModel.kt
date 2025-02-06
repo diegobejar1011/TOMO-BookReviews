@@ -1,5 +1,6 @@
 package com.example.tomo.register.presentation
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,11 @@ import com.example.tomo.register.data.repository.RegisterRepository
 import kotlinx.coroutines.launch
 
 class RegisterViewModel: ViewModel() {
+
+    init {
+        Log.d("REGISTER_VW", "init: Inicialización de la clase ")
+    }
+
     private val repository = RegisterRepository()
 
     private var _username = MutableLiveData<String>()
@@ -38,7 +44,7 @@ class RegisterViewModel: ViewModel() {
         _password.value = password
     }
 
-    suspend fun onClick(createUserRequest: CreateUserRequest) {
+    fun onClick(createUserRequest: CreateUserRequest) {
         viewModelScope.launch {
             val result = repository.createUser(createUserRequest)
             result.onSuccess {

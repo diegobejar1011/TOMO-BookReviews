@@ -169,9 +169,7 @@ fun ContentInputs(error: String, title: String, author: String, rating: Int, des
         Button(
             onClick = {
                 val createReviewRequest = CreateReviewRequest(title, author, rating, description)
-                addViewModel.viewModelScope.launch {
-                    addViewModel.onClick(createReviewRequest)
-                }
+                addViewModel.onClick(createReviewRequest)
                       },
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 10.dp, vertical = 30.dp)

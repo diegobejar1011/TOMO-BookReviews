@@ -144,9 +144,7 @@ fun RegisterScreen(registerViewModel: RegisterViewModel, navigateToHome: () -> U
         Button(
             onClick = {
                 val createUserRequest = CreateUserRequest(username,email, password)
-                registerViewModel.viewModelScope.launch {
-                    registerViewModel.onClick(createUserRequest)
-                }
+                registerViewModel.onClick(createUserRequest)
             },
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 10.dp, vertical = 20.dp)

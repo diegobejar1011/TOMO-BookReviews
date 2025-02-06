@@ -1,5 +1,6 @@
 package com.example.tomo.add.presentation
 
+import android.util.Log
 import android.widget.MultiAutoCompleteTextView
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -13,6 +14,10 @@ import kotlinx.coroutines.launch
 class AddViewModel(
     private val tokenManager: TokenManager
 ): ViewModel() {
+
+    init {
+        Log.d("ADD_VW", "init: Inicialización de la clase ")
+    }
 
     private val repository = AddRepository(tokenManager)
 
