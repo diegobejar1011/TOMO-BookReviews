@@ -60,6 +60,11 @@ dependencies {
     // Agrega la dependencia de Kotlinx Serialization
     implementation(libs.jetbrains.kotlinx.serialization.json)
 
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+    implementation(libs.accompanist.permissions)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

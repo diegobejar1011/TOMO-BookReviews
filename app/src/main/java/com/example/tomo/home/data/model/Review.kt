@@ -6,5 +6,6 @@ data class Review (
     val book_title: String,
     val book_author: String,
     val rating: Int,
-    val description: String
+    val description: String,
+    val image: String?
 )

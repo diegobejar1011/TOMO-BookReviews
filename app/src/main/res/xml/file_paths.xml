@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permite el acceso al directorio de caché de la aplicación -->
+    <cache-path
+        name="cache_files"
+        path="." /> <!-- Asegúrate de acceder correctamente a la caché -->
+
+    <!-- Permite el acceso al directorio de imágenes de la aplicación -->
+    <external-files-path
+        name="my_images"
+        path="Pictures/MyAppImages" />
+</paths>

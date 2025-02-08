@@ -1,7 +1,10 @@
 package com.example.tomo.home.presentation
 
+import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,11 +29,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import com.example.tomo.R
+import com.example.tomo.core.navigation.Home
 import com.example.tomo.home.data.model.Review
 import kotlinx.coroutines.launch
 
@@ -62,7 +71,7 @@ fun HomeScreen(homeViewModel : HomeViewModel, navigateToAdd: () -> Unit){
     ){
         Header()
 
-        ContentCards(error, reviews, navigateToAdd)
+        ContentCards(error, reviews, navigateToAdd, homeViewModel)
 
     }
 }
@@ -80,7 +89,9 @@ fun Header(){
         Image(
             painter = logoHome,
             contentDescription = "",
-            modifier = Modifier.size(100.dp).padding(horizontal = 10.dp)
+            modifier = Modifier
+                .size(100.dp)
+                .padding(horizontal = 10.dp)
         )
         Text(
                 text= "Home",
@@ -92,7 +103,7 @@ fun Header(){
 }
 
 @Composable
-fun ContentCards(error: String, reviews:List<Review>, navigateToAdd: () -> Unit) {
+fun ContentCards(error: String, reviews:List<Review>, navigateToAdd: () -> Unit, homeViewModel : HomeViewModel) {
     Box(modifier = Modifier
         .fillMaxSize()) {
 
@@ -100,10 +111,12 @@ fun ContentCards(error: String, reviews:List<Review>, navigateToAdd: () -> Unit)
             .fillMaxHeight()
             .verticalScroll(rememberScrollState())
         ) {
-            Cards(reviews)
+            Cards(reviews, homeViewModel)
 
             Text(text= error,
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
                 fontSize = 20.sp,
                 color = Color(0xFF4A4A4A),
                 fontWeight = FontWeight.Bold,
@@ -118,39 +131,47 @@ fun ContentCards(error: String, reviews:List<Review>, navigateToAdd: () -> Unit)
                 shape = RoundedCornerShape(50.dp),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(horizontal = 10.dp, vertical = 40.dp).size(80.dp),
+                    .padding(horizontal = 10.dp, vertical = 40.dp)
+                    .size(80.dp),
 
         ){
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "",
                 tint = Color(0xFFF6F6F6),
-                modifier = Modifier.size(30.dp).shadow(60.dp)
+                modifier = Modifier
+                    .size(30.dp)
+                    .shadow(60.dp)
             )
         }
     }
 }
 
 @Composable
-fun Cards(reviews:List<Review>) {
+fun Cards(reviews:List<Review>, homeViewModel : HomeViewModel) {
     Column(modifier = Modifier
         .fillMaxWidth()
         .padding(vertical = 10.dp, horizontal = 20.dp)
     ){
         for (review in reviews){
-            Card(review)
+            Card(review, homeViewModel)
         }
     }
 }
 
 @Composable
-fun Card(review: Review) {
+fun Card(review: Review, homeViewModel : HomeViewModel) {
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .height(250.dp)
             .padding(vertical = 10.dp, horizontal = 20.dp)
-            .shadow(4.dp, shape = RoundedCornerShape(8.dp), ambientColor = Color.Black.copy(alpha = 0.5f)),
+            .shadow(
+                4.dp,
+                shape = RoundedCornerShape(8.dp),
+                ambientColor = Color.Black.copy(alpha = 0.5f)
+            ),
         verticalArrangement = Arrangement.Center,
     ){
         Text(   text = review.book_title,
@@ -171,6 +192,27 @@ fun Card(review: Review) {
             modifier = Modifier.padding(20.dp),
             overflow = TextOverflow.Ellipsis
         )
+
+        if(review.image!= null) {
+            Log.d("MOTRAR IMAGEN", "Card: ${review.image} AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+            val context = LocalContext.current
+            val savedBitmap = homeViewModel.getBitmapFromPath(context, review.image)
+
+            if (savedBitmap != null) {
+                Image(
+                    bitmap = savedBitmap.asImageBitmap(),
+                    contentDescription = "Saved Image",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(2.dp, Color.Gray, RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(text = "No image found", color = Color.Gray)
+            }
+        }
+
     }
 }
 
@@ -191,3 +233,7 @@ fun Rating(rating: Int) {
         }
     }
 }
+
+
+
+

@@ -1,5 +1,10 @@
 package com.example.tomo.add.presentation
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,13 +12,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
@@ -25,13 +34,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +56,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import com.example.tomo.R
 import com.example.tomo.add.data.model.CreateReviewRequest
+import com.example.tomo.core.hardware.model.CameraIntent
+import com.example.tomo.core.hardware.model.CameraState
 import com.example.tomo.core.navigation.Add
 import com.example.tomo.core.storage.TokenManager
 import kotlinx.coroutines.launch
@@ -61,11 +77,34 @@ fun AddScreen(addViewModel: AddViewModel, navigateToHome: () -> Unit, tokenManag
         navigateToHome()
     }
 
+    val viewState: CameraState by addViewModel.viewStateFlow.collectAsState()
+
+    val currentContext = LocalContext.current
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { isImageSaved ->
+        if (isImageSaved) {
+            addViewModel.onReceive(CameraIntent.OnImageSavedWith(currentContext))
+        } else {
+            addViewModel.onReceive(CameraIntent.OnImageSavingCanceled)
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permissionGranted ->
+        if (permissionGranted) {
+            addViewModel.onReceive(CameraIntent.OnPermissionGrantedWith(currentContext))
+        } else {
+            addViewModel.onReceive(CameraIntent.OnPermissionDenied)
+        }
+    }
+
+
+
     Column( modifier = Modifier
         .fillMaxSize()
+        .verticalScroll(rememberScrollState())
     ) {
         Header(navigateToHome)
-        ContentInputs(error, title, author, rating, description, addViewModel, tokenManager)
+        ContentInputs(error, title, author, rating, description, addViewModel, viewState, permissionLauncher, cameraLauncher)
     }
 }
 
@@ -94,7 +133,7 @@ fun Header(navigateToHome: () -> Unit){
 }
 
 @Composable
-fun ContentInputs(error: String, title: String, author: String, rating: Int, description: String, addViewModel: AddViewModel, tokenManager: TokenManager){
+fun ContentInputs(error: String, title: String, author: String, rating: Int, description: String, addViewModel: AddViewModel, viewState: CameraState, permissionLauncher: ManagedActivityResultLauncher<String, Boolean>, cameraLauncher: ManagedActivityResultLauncher<Uri, Boolean>){
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -102,6 +141,45 @@ fun ContentInputs(error: String, title: String, author: String, rating: Int, des
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ){
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    if (viewState.tempFileUrl == null) {
+                        permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                    } else {
+                        cameraLauncher.launch(viewState.tempFileUrl)
+                    }
+                },
+                modifier = Modifier
+                    .width(180.dp)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF000000),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(text = "Take a photo", fontSize = 16.sp)
+            }
+            if (viewState.selectedPicture != null) {
+                Image(
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .padding(20.dp),
+                    bitmap = viewState.selectedPicture,
+                    contentDescription = "Selected Picture",
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+
         TextField(
             value = title,
             onValueChange = { addViewModel.onChangeTitle(it)},
@@ -168,7 +246,7 @@ fun ContentInputs(error: String, title: String, author: String, rating: Int, des
 
         Button(
             onClick = {
-                val createReviewRequest = CreateReviewRequest(title, author, rating, description)
+                val createReviewRequest = CreateReviewRequest(title, author, rating, description, viewState.pathImageSave)
                 addViewModel.onClick(createReviewRequest)
                       },
             modifier = Modifier.fillMaxWidth()
@@ -199,33 +277,35 @@ fun ContentInputs(error: String, title: String, author: String, rating: Int, des
 }
 
 @Composable
-fun Rating(counter: Int, addViewModel: AddViewModel) {
-
+fun Rating(currentRating: Int, addViewModel: AddViewModel) {
     val starsState = remember { mutableStateListOf(false, false, false, false, false) }
+
+    LaunchedEffect(currentRating) {
+        starsState.forEachIndexed { index, _ ->
+            starsState[index] = index < currentRating
+        }
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 20.dp),
         horizontalArrangement = Arrangement.Center
-    ){
-
-        starsState.forEachIndexed { index, isSelected ->
+    ) {
+        starsState.forEachIndexed { index, _ ->
             IconButton(
                 onClick = {
-                    starsState[index] = !starsState[index]
-                    val newRating = starsState.count { it }
+                    val newRating = index + 1  // Seleccionar hasta la estrella tocada
                     addViewModel.onChangeRating(newRating)
                 }
             ) {
                 Icon(
                     imageVector = Icons.Default.Star,
-                    contentDescription = "Star $index",
-                    tint = if (isSelected) Color(0xFFFFD700) else Color(0xFFB3B2AE),
+                    contentDescription = "Star ${index + 1}",
+                    tint = if (index < currentRating) Color(0xFFFFD700) else Color(0xFFB3B2AE),
                     modifier = Modifier.size(50.dp)
                 )
             }
         }
-
     }
 }
